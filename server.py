@@ -1,5 +1,6 @@
 import flask, json
 import os
+import math
 from flask import request, jsonify
 import requests
 
@@ -53,7 +54,15 @@ def getFact():
     for arg in args:
         if arg not in keyParam:
             param = query_parameters.get(arg) # get value given with the arg
-            response = [c for c in curr_data if c["dims"][arg.upper()] in param] # get all data that matches
+            if arg.lower() == "value":
+                valueBits = param.split("-")
+                if len(valueBits) == 2: # should not be more than two value?
+                    left = int(valueBits[0])
+                    right = int(valueBits[1])
+                    print("valuebits ", left, right)
+                    response = [c for c in curr_data if int(c["VALUE"]) >= left and int(c["VALUE"]) <= right] # get all data that matches
+            else:
+                response = [c for c in curr_data if c["dims"][arg.upper()] in param] # get all data that matches
             curr_data = response # update data
 
     # Paginating – For example, ?page=2, ?p=2 or viewItems=10-30
@@ -69,14 +78,22 @@ def getFact():
 def getAPI():
     query_parameters = request.args
     curr_data = data["fact"]
-    response = data
+    response = curr_data
     
 
     args = [i for i in query_parameters.keys()]
     for arg in args:
         if arg not in keyParam:
             param = query_parameters.get(arg) # get value given with the arg
-            response = [c for c in curr_data if c["dims"][arg.upper()] in param] # get all data that matches
+            if arg.lower() == "value":
+                valueBits = param.split("-")
+                if len(valueBits) == 2: # should not be more than two value?
+                    left = int(valueBits[0])
+                    right = int(valueBits[1])
+                    print("valuebits ", left, right)
+                    response = [c for c in curr_data if int(c["VALUE"]) >= left and int(c["VALUE"]) <= right] # get all data that matches
+            else:
+                response = [c for c in curr_data if c["dims"][arg.upper()] in param] # get all data that matches
             curr_data = response # update data
             # filtering numbers? e.g ?value=20-50
 
@@ -93,12 +110,12 @@ def getAPI():
 # Filtering, sorting, pagination
 def applyAllKeyParam(query_parameters, response):
     limit = query_parameters.get('limit', type = int)
-    page = query_parameters.get('page', type = int)
+    page = query_parameters.get('page', type = int, default=1)
     sort = query_parameters.get('sort')
     order = query_parameters.get('order', default="asc")
     filtering = query_parameters.get('filtering', type = int)
     
-    
+    totalElements =  len(response)
     isDescending = False if order == "asc" else True
     if sort:
         bits = sort.split(",")
@@ -106,8 +123,9 @@ def applyAllKeyParam(query_parameters, response):
         if "value" in bits:
             response = sorted(response, key=lambda x : x["VALUE"], reverse=isDescending)
 
+
+    element_per_page = 10
     if page:
-        element_per_page = 10
         if limit:
             element_per_page = limit
         
@@ -121,7 +139,18 @@ def applyAllKeyParam(query_parameters, response):
     elif limit:
         response = list(response)[:limit] # override value
 
-    return response
+
+
+    # pageSize = limit
+    # page = page
+
+    totalPages = math.ceil(totalElements / element_per_page)
+    if totalElements <= element_per_page:
+        totalPages = 1
+
+    pageObject = {"pageSize" : element_per_page, "page" : page, "totalElements": len(response), "totalPages": totalPages}
+    
+    return {"page" : pageObject, "results" : response}
     
 
 app.run()
