@@ -27,7 +27,7 @@ keyParam = ["page", "sort", "limit", "order"] # pagination, sort, filtering
 if __name__ == '__main__':
     SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
     json_url = os.path.join(SITE_ROOT, "static/data", "demofile2.json")
-    data = json.load(open(json_url)) # data
+    data = json.load(open(json_url, encoding='utf-8')) # data
 
 
 @app.route('/', methods=['GET'])
