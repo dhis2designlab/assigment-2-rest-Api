@@ -188,9 +188,9 @@ def applyAllKeyParam(query_parameters, response):
     isDescending = False if order == "asc" else True
     if sort:
         bits = sort.split(",")
-        response = sorted(response, key=lambda x : ([x["dims"][key.upper()] for key in bits if key.upper() != "VALUE"]), reverse=isDescending)
-        if "value" in bits:
-            response = sorted(response, key=lambda x : x["VALUE"], reverse=isDescending)
+        response = sorted(response, key=lambda x : ([x[key.upper()] for key in bits if key.upper() != "VALUE"]), reverse=isDescending)
+        if "pop" in bits:
+            response = sorted(response, key=lambda x : x["POP"], reverse=isDescending)
 
 
     element_per_page = 10
